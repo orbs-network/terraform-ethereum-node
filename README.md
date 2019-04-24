@@ -26,6 +26,7 @@ Want to get going? No problem! these are the basic requirements to make this pro
     ```
     brew install terraform
     ```
+    Don't have Homebrew installed? [Click here](https://brew.sh/)
 
 ## Creating the ethereum node
 
