@@ -12,7 +12,7 @@ var server = http.createServer((function (_, response) {
 
     if (o.result === false) { // This means ethereum is synced with the network
         returnValue.ok = true;
-        returnValue.message = 'Ethereum has is now fully synced with the mainnet!';
+        returnValue.message = 'Ethereum is now fully synced with the mainnet!';
     } else {
         if (o.result.highestBlock === '0x0') {
             returnValue.message = 'Ethereum is downloading an initial snapshot, and will soon start syncing blocks';
