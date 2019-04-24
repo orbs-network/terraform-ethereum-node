@@ -27,7 +27,7 @@ mount -a
 cd /home/ubuntu && curl -O https://releases.parity.io/ethereum/v2.3.5/x86_64-unknown-linux-gnu/parity
 chmod u+x parity
 
-#(crontab -l 2>/dev/null; echo "0 * * * * /home/ubuntu/restart-parity.sh") | crontab -
+(crontab -l 2>/dev/null; echo "0 */2 * * * /usr/bin/node /home/ubuntu/check-ethereum.js") | crontab -
 
 echo "[program:healthcheck]
 command=/usr/bin/node /home/ubuntu/health.js
@@ -77,6 +77,11 @@ resource "aws_instance" "ethereum" {
   provisioner "file" {
     source      = "health.js"
     destination = "/home/ubuntu/health.js"
+  }
+
+  provisioner "file" {
+    source      = "check-ethereum.js"
+    destination = "/home/ubuntu/check-ethereum.js"
   }
 
   connection {

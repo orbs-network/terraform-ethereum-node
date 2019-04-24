@@ -74,7 +74,7 @@ if (o.result === false) { // This means ethereum is synced with the network
     }
 }
 
-if (true) {
+if (shouldRestart) {
     console.log('Restarting Ethereum...');
     console.log(restartEthereum().toString());
 }
