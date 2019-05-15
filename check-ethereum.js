@@ -7,7 +7,10 @@ function restartEthereum() {
     });
 }
 
-function getLastEthereumLogs(n = 100) {
+// We can only run on the last maximum 720 lines
+// since parity writes a log line every 5 seconds so that's 720 lines in 1 hour
+// we shouldn't pull more to not overlap our decisions from the last run of this script
+function getLastEthereumLogs(n = 500) {
     const result = execSync(`tail -n ${n} /var/log/ethereum.err.log`);
     const resultAsString = result.toString();
     return resultAsString.split('\n');
@@ -17,7 +20,7 @@ function getLastEthereumLogs(n = 100) {
  * Checks iteratively if we are stuck on a specific piece of the snapshot
  * @param {*} logs 
  */
-function stuckWhileSyncing(logs) {
+function stuckWhileSyncingSnapshot(logs) {
     let currentSnapshotFigure = 'xxxx';
     let appearances = 0;
 
@@ -64,13 +67,12 @@ if (o.result === false) { // This means ethereum is synced with the network
         console.log('Ethereum is syncing the initial snapshot, checking if it is not stuck..');
 
         // If Ethereum is stuck syncing the latest snapshot - restart it
-        if (stuckWhileSyncing(getLastEthereumLogs(500))) {
+        if (stuckWhileSyncingSnapshot(getLastEthereumLogs(500))) {
             shouldRestart = true;
         }
     } else {
         let blocksRemainingToSync = parseInt(o.result.highestBlock) - parseInt(o.result.currentBlock);
         console.log(`Ethereum is syncing and has ${blocksRemainingToSync} blocks remaining to sync, quiting..`);
-
     }
 }
 

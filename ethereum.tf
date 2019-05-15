@@ -24,10 +24,10 @@ mkfs -t xfs /dev/$BLOCK_STORAGE_NAME
 echo "/dev/$BLOCK_STORAGE_NAME /home/root/.local xfs defaults,nofail 0 0" >> /etc/fstab
 mount -a
 
-cd /home/ubuntu && curl -O https://releases.parity.io/ethereum/v2.3.5/x86_64-unknown-linux-gnu/parity
+cd /home/ubuntu && curl -O https://releases.parity.io/ethereum/v2.4.5/x86_64-unknown-linux-gnu/parity
 chmod u+x parity
 
-(crontab -l 2>/dev/null; echo "0 */2 * * * /usr/bin/node /home/ubuntu/check-ethereum.js") | crontab -
+(crontab -l 2>/dev/null; echo "0 */1 * * * /usr/bin/node /home/ubuntu/check-ethereum.js") | crontab -
 
 echo "[program:healthcheck]
 command=/usr/bin/node /home/ubuntu/health.js
@@ -62,7 +62,9 @@ resource "aws_instance" "ethereum" {
   ami               = "${data.aws_ami.ubuntu-18_04.id}"
   count             = 1
   availability_zone = "${aws_ebs_volume.ethereum_block_storage.availability_zone}"
-  instance_type     = "m5d.large"
+  instance_type     = "m5d.xlarge"
+  # This machine type is chosen since we need at least 16GB of RAM for mainnet
+  # and sufficent amount of networking capabilities
   security_groups   = ["${aws_security_group.ethereum.id}"]
   key_name          = "${aws_key_pair.deployer.key_name}"
   subnet_id         = "${ aws_subnet.ethereum.id }"
@@ -91,6 +93,6 @@ resource "aws_instance" "ethereum" {
   }
 
   tags = {
-    Name = "ethereum-full-node"
+    Name = "ethereum-ca-4"
   }
 }

@@ -12,7 +12,7 @@ variable "vpc_cidr_block" {
 }
 
 variable "region" {
-  default = "us-east-1"
+  default = "ca-central-1"
 }
 
 variable "aws_profile" {
