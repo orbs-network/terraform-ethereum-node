@@ -8,7 +8,23 @@ variable "provisionersrc" {
 
 variable "vpc_cidr_block" {
   description = "The VPC CIDR address range"
-  default = "172.31.0.0/16"
+  default     = "172.31.0.0/16"
+}
+
+variable "count" {
+  description = "The amount of Parity instances to create"
+  default     = 1
+}
+
+variable "vpc_id" {
+  default = "PLEASE_UPDATE_TO_YOUR_DESIRED_VPC_ID"
+}
+
+variable "ssh_keypath" {
+  default = "~/.ssh/id_rsa.pub"
+}
+variable "ssh_private_keypath" {
+  default = "~/.ssh/id_rsa"
 }
 
 variable "region" {

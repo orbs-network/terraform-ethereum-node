@@ -1,47 +1,12 @@
+const { stuckWhileSyncingCertainBlock,
+    stuckWhileSyncingPeriodicSnapshot,
+    timeLog,
+    stuckWhileSyncingSnapshot,
+    restartEthereum,
+    getLastEthereumLogs, } = require('./ethereum-lib');
 const execSync = require('child_process').execSync;
+
 const commandAsString = `curl -s --data '{"method":"eth_syncing","params":[],"id":1,"jsonrpc":"2.0"}' -H "Content-Type: application/json" -X POST http://localhost:8545`;
-
-function restartEthereum() {
-    return execSync('./restart-parity.sh', {
-        cwd: '/home/ubuntu'
-    });
-}
-
-// We can only run on the last maximum 720 lines
-// since parity writes a log line every 5 seconds so that's 720 lines in 1 hour
-// we shouldn't pull more to not overlap our decisions from the last run of this script
-function getLastEthereumLogs(n = 500) {
-    const result = execSync(`tail -n ${n} /var/log/ethereum.err.log`);
-    const resultAsString = result.toString();
-    return resultAsString.split('\n');
-}
-
-/**
- * Checks iteratively if we are stuck on a specific piece of the snapshot
- * @param {*} logs 
- */
-function stuckWhileSyncingSnapshot(logs) {
-    let currentSnapshotFigure = 'xxxx';
-    let appearances = 0;
-
-    logs.forEach((log) => {
-        const logParts = log.split(' ');
-        if (logParts[3] === 'Syncing' && logParts[4] === 'snapshot') {
-            if (currentSnapshotFigure !== logParts[5]) { // New snapshot figure detected!
-                currentSnapshotFigure = logParts[5];
-                appearances = 1;
-                continue;
-            } else if (currentSnapshotFigure === logParts[5]) {
-                appearances++;
-            }
-        }
-    });
-
-    if (appearances > 50) {
-        return true;
-    }
-    return false;
-}
 
 var shouldRestart = false;
 var resultAsString;
@@ -61,24 +26,36 @@ try {
 const o = JSON.parse(resultAsString);
 
 if (o.result === false) { // This means ethereum is synced with the network
-    console.log('Ethereum is synced, no need to do anything, quiting..');
+    timeLog('Ethereum is synced, no need to do anything, quiting..');
 } else {
     if (o.result.highestBlock === '0x0') { // Downloading snapshot
-        console.log('Ethereum is syncing the initial snapshot, checking if it is not stuck..');
+        timeLog('Ethereum is syncing the initial snapshot, checking if it is not stuck..');
 
         // If Ethereum is stuck syncing the latest snapshot - restart it
         if (stuckWhileSyncingSnapshot(getLastEthereumLogs(500))) {
             shouldRestart = true;
         }
     } else {
-        let blocksRemainingToSync = parseInt(o.result.highestBlock) - parseInt(o.result.currentBlock);
-        console.log(`Ethereum is syncing and has ${blocksRemainingToSync} blocks remaining to sync, quiting..`);
+        timeLog('Parity looks like its business as usual, lets run its logs past one more analysis..');
+        const resultStuckOnSpecificBlock = stuckWhileSyncingCertainBlock(getLastEthereumLogs(500));
+        const resultStuckOnPeriodicSnapshot = stuckWhileSyncingPeriodicSnapshot(getLastEthereumLogs(500));
+
+        if (resultStuckOnSpecificBlock.ok) {
+            shouldRestart = true;
+            timeLog(resultStuckOnSpecificBlock.message);
+        } else if (resultStuckOnPeriodicSnapshot.ok) {
+            shouldRestart = true;
+            timeLog(resultStuckOnPeriodicSnapshot.message);
+        } else {
+            let blocksRemainingToSync = parseInt(o.result.highestBlock) - parseInt(o.result.currentBlock);
+            timeLog(`Ethereum is syncing and has ${blocksRemainingToSync} blocks remaining to sync, quiting..`);
+        }
     }
 }
 
 if (shouldRestart) {
-    console.log('Restarting Ethereum...');
-    console.log(restartEthereum().toString());
+    timeLog('Restarting Ethereum...');
+    timeLog(restartEthereum().toString());
 }
 
 process.exit(0);

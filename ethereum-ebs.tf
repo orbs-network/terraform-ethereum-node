@@ -1,5 +1,5 @@
 resource "aws_ebs_volume" "ethereum_block_storage" {
-  count             = 1
+  count             = "${var.count}"
   size              = 500
   availability_zone = "${data.aws_availability_zones.available.names[0]}"
 
@@ -9,8 +9,9 @@ resource "aws_ebs_volume" "ethereum_block_storage" {
 }
 
 resource "aws_volume_attachment" "ethereum_block_storage_attachment" {
-  count        = 1
+  count             = "${var.count}"
   device_name  = "/dev/sdh"
-  volume_id    = "${aws_ebs_volume.ethereum_block_storage.id}"
-  instance_id  = "${aws_instance.ethereum.id}"
+  force_detach = true
+  volume_id = "${element(aws_ebs_volume.ethereum_block_storage.*.id, count.index)}"
+  instance_id = "${element(aws_instance.ethereum.*.id, count.index)}"
 }

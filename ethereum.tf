@@ -27,7 +27,7 @@ mount -a
 cd /home/ubuntu && curl -O https://releases.parity.io/ethereum/v2.4.5/x86_64-unknown-linux-gnu/parity
 chmod u+x parity
 
-(crontab -l 2>/dev/null; echo "0 */1 * * * /usr/bin/node /home/ubuntu/check-ethereum.js") | crontab -
+(crontab -l 2>/dev/null; echo "0 */1 * * * /usr/bin/node /home/ubuntu/check-ethereum.js >> /var/log/manager.log") | crontab -
 
 echo "[program:healthcheck]
 command=/usr/bin/node /home/ubuntu/health.js
@@ -48,9 +48,9 @@ TFEOF
 
 resource "aws_subnet" "ethereum" {
   count                   = 1
-  vpc_id                  = "${module.vpc.id}"
+  vpc_id                  = "${var.vpc_id}"
   cidr_block              = "172.31.100.0/24"
-  availability_zone       = "${aws_ebs_volume.ethereum_block_storage.availability_zone}"
+  availability_zone       = "${aws_ebs_volume.ethereum_block_storage.*.availability_zone[0]}"
   map_public_ip_on_launch = true
 
   tags = {
@@ -60,14 +60,17 @@ resource "aws_subnet" "ethereum" {
 
 resource "aws_instance" "ethereum" {
   ami               = "${data.aws_ami.ubuntu-18_04.id}"
-  count             = 1
-  availability_zone = "${aws_ebs_volume.ethereum_block_storage.availability_zone}"
+  count             = "${var.count}"
+  availability_zone = "${aws_ebs_volume.ethereum_block_storage.*.availability_zone[0]}"
   instance_type     = "m5d.xlarge"
+  
+
   # This machine type is chosen since we need at least 16GB of RAM for mainnet
   # and sufficent amount of networking capabilities
-  security_groups   = ["${aws_security_group.ethereum.id}"]
-  key_name          = "${aws_key_pair.deployer.key_name}"
-  subnet_id         = "${ aws_subnet.ethereum.id }"
+  security_groups = ["${aws_security_group.ethereum.id}"]
+
+  key_name  = "${aws_key_pair.deployer.key_name}"
+  subnet_id = "${ aws_subnet.ethereum.id }"
 
   user_data = "${local.ethereum_user_data}"
 
@@ -86,13 +89,18 @@ resource "aws_instance" "ethereum" {
     destination = "/home/ubuntu/check-ethereum.js"
   }
 
+  provisioner "file" {
+    source      = "ethereum-lib.js"
+    destination = "/home/ubuntu/ethereum-lib.js"
+  }
+
   connection {
     type        = "ssh"
     user        = "ubuntu"
-    private_key = "${file("~/.ssh/id_rsa")}"
+    private_key = "${file(var.ssh_private_keypath)}"
   }
 
   tags = {
-    Name = "ethereum-ca-4"
+    Name = "ethereum-parity-${count.index}"
   }
 }
