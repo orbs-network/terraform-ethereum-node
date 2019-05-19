@@ -62,8 +62,7 @@ resource "aws_instance" "ethereum" {
   ami               = "${data.aws_ami.ubuntu-18_04.id}"
   count             = "${var.count}"
   availability_zone = "${aws_ebs_volume.ethereum_block_storage.*.availability_zone[0]}"
-  instance_type     = "m5d.xlarge"
-  
+  instance_type     = "${var.instance_type}"
 
   # This machine type is chosen since we need at least 16GB of RAM for mainnet
   # and sufficent amount of networking capabilities
@@ -73,6 +72,10 @@ resource "aws_instance" "ethereum" {
   subnet_id = "${ aws_subnet.ethereum.id }"
 
   user_data = "${local.ethereum_user_data}"
+
+  provisioner "remote-exec" {
+    inline = ["sudo hostnamectl set-hostname eth-${var.region}-${count.index}"]
+  }
 
   provisioner "file" {
     source      = "restart-parity.sh"

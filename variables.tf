@@ -20,9 +20,14 @@ variable "vpc_id" {
   default = "PLEASE_UPDATE_TO_YOUR_DESIRED_VPC_ID"
 }
 
+variable "instance_type" {
+  default = "m5.2xlarge"
+}
+
 variable "ssh_keypath" {
   default = "~/.ssh/id_rsa.pub"
 }
+
 variable "ssh_private_keypath" {
   default = "~/.ssh/id_rsa"
 }
