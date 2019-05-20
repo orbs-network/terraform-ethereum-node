@@ -27,7 +27,7 @@ mount -a
 cd /home/ubuntu && curl -O https://releases.parity.io/ethereum/v2.4.5/x86_64-unknown-linux-gnu/parity
 chmod u+x parity
 
-(crontab -l 2>/dev/null; echo "0 */1 * * * /usr/bin/node /home/ubuntu/check-ethereum.js >> /var/log/manager.log") | crontab -
+(crontab -l 2>/dev/null; echo "0 */1 * * *  /usr/bin/node /home/ubuntu/check-ethereum.js ${var.slack_webhook_url} >> /var/log/manager.log") | crontab -
 
 echo "[program:healthcheck]
 command=/usr/bin/node /home/ubuntu/health.js
@@ -43,19 +43,23 @@ stdout_logfile=/var/log/ethereum.out.log" >> /etc/supervisor/conf.d/ethereum.con
 
 supervisorctl reread && supervisorctl update
 
+# Setup AWS credentials for CloudWatch Agent
+echo "[default]
+aws_access_key_id = ${aws_iam_access_key.cloudwatch.id}
+aws_secret_access_key = ${aws_iam_access_key.cloudwatch.secret}
+" >> ~/.aws/credentials
+
+echo "[default]
+region=${var.region}
+output=json" >> ~/.aws/config
+
+# Installing AWS CloudWatch Agent
+wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
+
+dpkg -i -E ./amazon-cloudwatch-agent.deb
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/etc/cloudwatch-agent-config.json -s
+
 TFEOF
-}
-
-resource "aws_subnet" "ethereum" {
-  count                   = 1
-  vpc_id                  = "${var.vpc_id}"
-  cidr_block              = "172.31.100.0/24"
-  availability_zone       = "${aws_ebs_volume.ethereum_block_storage.*.availability_zone[0]}"
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "ethereum-subnet"
-  }
 }
 
 resource "aws_instance" "ethereum" {
@@ -69,17 +73,29 @@ resource "aws_instance" "ethereum" {
   security_groups = ["${aws_security_group.ethereum.id}"]
 
   key_name  = "${aws_key_pair.deployer.key_name}"
-  subnet_id = "${ aws_subnet.ethereum.id }"
+  subnet_id = "${ module.vpc.subnet-ids-public[0] }"
 
   user_data = "${local.ethereum_user_data}"
 
   provisioner "remote-exec" {
-    inline = ["sudo hostnamectl set-hostname eth-${var.region}-${count.index}"]
+    inline = [
+      "sudo hostnamectl set-hostname ethereum-parity-${var.region}-${count.index+1}",
+    ]
   }
 
   provisioner "file" {
     source      = "restart-parity.sh"
     destination = "/home/ubuntu/restart-parity.sh"
+  }
+
+  provisioner "file" {
+    source      = "cloudwatch-agent-config.json"
+    destination = "/home/ubuntu/cloudwatch-agent-config.json"
+  }
+
+  provisioner "file" {
+    source      = "cloudwatch-common-config.toml"
+    destination = "/opt/aws/amazon-cloudwatch-agent/etc/common-config.toml"
   }
 
   provisioner "file" {
@@ -104,6 +120,6 @@ resource "aws_instance" "ethereum" {
   }
 
   tags = {
-    Name = "ethereum-parity-${count.index}"
+    Name = "ethereum-parity-${count.index+1}"
   }
 }

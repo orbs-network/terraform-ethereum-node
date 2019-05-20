@@ -1,0 +1,3 @@
+[credentials]
+shared_credential_profile = "default"
+shared_credential_file = "/root/.aws/credentials"

@@ -1,4 +1,15 @@
 const execSync = require('child_process').execSync;
+const os = require('os');
+
+// Read a url from the environment variables
+const slackUrl = process.argv[2];
+
+function notifyManagerInitiatedRestartToSlack(managerMessage) {
+    if (slackUrl !== undefined) {
+        const baseCommand = 'curl -s -X POST --data-urlencode "payload={\\"channel\\": \\"#prod-monitoring\\", \\"username\\": \\"eth-manager\\", \\"text\\": \\"Restarting Ethereum node *' + os.hostname() + '* with reason: \\`' + managerMessage + '\\`\\"}" ' + slackUrl;
+        execSync(baseCommand);
+    }
+}
 
 /**
  * Check iteratively if we are stuck syncing a specific block number
@@ -121,6 +132,7 @@ module.exports = {
     stuckWhileSyncingCertainBlock,
     stuckWhileSyncingPeriodicSnapshot,
     timeLog,
+    notifyManagerInitiatedRestartToSlack,
     stuckWhileSyncingSnapshot,
     restartEthereum,
     getLastEthereumLogs,

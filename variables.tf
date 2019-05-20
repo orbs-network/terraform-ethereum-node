@@ -1,9 +1,9 @@
 variable "application" {
-  default = "ethereum"
+  default = "ethereum-parity"
 }
 
 variable "provisionersrc" {
-  default = "itamararjuan/terraform-ethereum-node"
+  default = "orbs-network/terraform-ethereum-node"
 }
 
 variable "vpc_cidr_block" {
@@ -11,13 +11,14 @@ variable "vpc_cidr_block" {
   default     = "172.31.0.0/16"
 }
 
+variable "slack_webhook_url" {}
+
 variable "count" {
   description = "The amount of Parity instances to create"
   default     = 1
 }
 
 variable "vpc_id" {
-  default = "PLEASE_UPDATE_TO_YOUR_DESIRED_VPC_ID"
 }
 
 variable "instance_type" {
