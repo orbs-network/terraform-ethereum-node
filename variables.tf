@@ -18,8 +18,7 @@ variable "count" {
   default     = 1
 }
 
-variable "vpc_id" {
-}
+variable "vpc_id" {}
 
 variable "instance_type" {
   default = "m5.2xlarge"
@@ -40,3 +39,5 @@ variable "region" {
 variable "aws_profile" {
   default = "default"
 }
+
+variable "alarms_email" {}

@@ -43,6 +43,8 @@ stdout_logfile=/var/log/ethereum.out.log" >> /etc/supervisor/conf.d/ethereum.con
 
 supervisorctl reread && supervisorctl update
 
+mkdir -p ~/.aws
+
 # Setup AWS credentials for CloudWatch Agent
 echo "[default]
 aws_access_key_id = ${aws_iam_access_key.cloudwatch.id}
@@ -57,7 +59,17 @@ output=json" >> ~/.aws/config
 wget https://s3.amazonaws.com/amazoncloudwatch-agent/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb
 
 dpkg -i -E ./amazon-cloudwatch-agent.deb
-/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/etc/cloudwatch-agent-config.json -s
+wget https://raw.githubusercontent.com/orbs-network/terraform-ethereum-node/master/cloudwatch-agent-config.json
+mv cloudwatch-agent-config.json /etc/
+
+wget https://raw.githubusercontent.com/orbs-network/terraform-ethereum-node/master/cloudwatch-common-config.toml
+mv cloudwatch-common-config.toml /opt/aws/amazon-cloudwatch-agent/etc/common-config.toml
+
+mkdir -p /usr/share/collectd/
+touch /usr/share/collectd/types.db
+
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a append-config -m ec2 -c file:/etc/cloudwatch-agent-config.json -s
+amazon-cloudwatch-agent-ctl -a start
 
 TFEOF
 }
@@ -86,16 +98,6 @@ resource "aws_instance" "ethereum" {
   provisioner "file" {
     source      = "restart-parity.sh"
     destination = "/home/ubuntu/restart-parity.sh"
-  }
-
-  provisioner "file" {
-    source      = "cloudwatch-agent-config.json"
-    destination = "/home/ubuntu/cloudwatch-agent-config.json"
-  }
-
-  provisioner "file" {
-    source      = "cloudwatch-common-config.toml"
-    destination = "/opt/aws/amazon-cloudwatch-agent/etc/common-config.toml"
   }
 
   provisioner "file" {
