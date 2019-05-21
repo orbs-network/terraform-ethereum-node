@@ -56,7 +56,7 @@ resource "aws_cloudwatch_metric_alarm" "disk" {
   metric_name         = "disk_used_percent"
   period              = "60"
   statistic           = "Average"
-  threshold           = "3"
+  threshold           = "80"
   alarm_description   = "This metric monitors the disk space for the EBS holding the blockchain data"
   alarm_actions       = ["${aws_sns_topic.alarm.arn}"]
 
@@ -112,7 +112,7 @@ resource "aws_cloudwatch_metric_alarm" "custom_healthcheck" {
   evaluation_periods  = "1"
   metric_name         = "Errors"
   namespace           = "AWS/Lambda"
-  period              = "60"
+  period              = "1800"
   statistic           = "Sum"
   threshold           = "0"
   alarm_description   = "Checks Parity sync status through the HTTP healthcheck"
