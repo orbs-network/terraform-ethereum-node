@@ -9,3 +9,4 @@
 *.tfvars
 
 node_modules/
+check-parity-sync-lambda/node_modules/

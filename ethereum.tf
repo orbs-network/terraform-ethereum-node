@@ -92,6 +92,7 @@ resource "aws_instance" "ethereum" {
   provisioner "remote-exec" {
     inline = [
       "sudo hostnamectl set-hostname ethereum-parity-${var.region}-${count.index+1}",
+      "echo 'testing' >> /home/ubuntu/testing.out",
     ]
   }
 

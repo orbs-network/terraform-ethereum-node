@@ -8,7 +8,10 @@
     },
     "author": "Itamar Arjuan",
     "license": "MIT",
-    "dependencies": {},
+    "dependencies": {
+        "request": "^2.88.0",
+        "request-promise-native": "^1.0.7"
+    },
     "devDependencies": {
         "chai": "^4.2.0",
         "chai-asserttype": "^1.0.5",
