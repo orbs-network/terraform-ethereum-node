@@ -1,0 +1,13 @@
+region = "us-east-1"
+
+count = 1
+
+instance_type = "m5d.2xlarge"
+
+ssh_keypath = "~/.ssh/id_rsa.pub"
+
+ssh_private_keypath = "~/.ssh/id_rsa"
+
+slack_webhook_url = ""
+
+alarms_email = "your@email.com"
