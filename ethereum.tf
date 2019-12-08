@@ -24,7 +24,7 @@ mkfs -t xfs /dev/$BLOCK_STORAGE_NAME
 echo "/dev/$BLOCK_STORAGE_NAME /home/root/.local xfs defaults,nofail 0 0" >> /etc/fstab
 mount -a
 
-cd /home/ubuntu && curl -O https://releases.parity.io/ethereum/v2.4.5/x86_64-unknown-linux-gnu/parity
+cd /home/ubuntu && curl -O https://releases.parity.io/ethereum/v2.6.6/x86_64-unknown-linux-gnu/parity
 chmod u+x parity
 
 (crontab -l 2>/dev/null; echo "0 */1 * * *  /usr/bin/node /home/ubuntu/check-ethereum.js ${var.slack_webhook_url} >> /var/log/manager.log") | crontab -
