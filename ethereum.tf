@@ -35,7 +35,7 @@ autostart=true
 autorestart=true" >> /etc/supervisor/conf.d/health.conf
 
 echo "[program:ethereum]
-command=/home/ubuntu/parity --chain mainnet --db-path=/home/root/.local --min-peers=45 --max-peers=60 --no-secretstore --jsonrpc-interface all --no-ipc --no-ws --pruning-history 5000
+command=/home/ubuntu/parity --chain mainnet --db-path=/home/root/.local --min-peers=45 --max-peers=60 --no-secretstore --jsonrpc-interface all --no-ipc --no-ws
 autostart=true
 autorestart=true
 stderr_logfile=/var/log/ethereum.err.log
@@ -79,19 +79,20 @@ resource "aws_instance" "ethereum" {
   count             = "${var.count}"
   availability_zone = "${aws_ebs_volume.ethereum_block_storage.*.availability_zone[0]}"
   instance_type     = "${var.instance_type}"
+  volume_size       = 50
 
   # This machine type is chosen since we need at least 16GB of RAM for mainnet
   # and sufficent amount of networking capabilities
   security_groups = ["${aws_security_group.ethereum.id}"]
 
   key_name  = "${aws_key_pair.deployer.key_name}"
-  subnet_id = "${ module.vpc.subnet-ids-public[0] }"
+  subnet_id = "${module.vpc.subnet-ids-public[0]}"
 
   user_data = "${local.ethereum_user_data}"
 
   provisioner "remote-exec" {
     inline = [
-      "sudo hostnamectl set-hostname ethereum-parity-${var.region}-${count.index+1}",
+      "sudo hostnamectl set-hostname ethereum-parity-${var.region}-${count.index + 1}",
       "echo 'testing' >> /home/ubuntu/testing.out",
     ]
   }
@@ -123,6 +124,6 @@ resource "aws_instance" "ethereum" {
   }
 
   tags = {
-    Name = "ethereum-parity-${count.index+1}"
+    Name = "ethereum-parity-${count.index + 1}"
   }
 }
