@@ -5,26 +5,29 @@ resource "aws_cloudwatch_event_rule" "schedule" {
 }
 
 resource "aws_cloudwatch_event_target" "check_parity_sync_trigger" {
+  count     = "${var.eth_count}"
   rule      = "${aws_cloudwatch_event_rule.schedule.name}"
   target_id = "check_foo"
-  arn       = "${aws_lambda_function.check_parity_sync.arn}"
+  arn       = "${element(aws_lambda_function.check_parity_sync.*.arn, count.index)}"
 }
 
 resource "aws_lambda_permission" "allow_cloudwatch_to_call_check_parity" {
+  count         = "${var.eth_count}"
   statement_id  = "AllowExecutionFromCloudWatch"
   action        = "lambda:InvokeFunction"
-  function_name = "${aws_lambda_function.check_parity_sync.function_name}"
+  function_name = "${element(aws_lambda_function.check_parity_sync.*.function_name, count.index)}"
   principal     = "events.amazonaws.com"
-  source_arn    = "${aws_cloudwatch_event_rule.schedule.arn}"
+  source_arn    = "${element(aws_cloudwatch_event_rule.schedule.*.arn, count.index)}"
 }
 
 resource "aws_lambda_function" "check_parity_sync" {
   filename = "check-parity.zip"
   runtime  = "nodejs8.10"
+  count    = "${var.eth_count}"
 
   environment {
     variables = {
-      "HEALTHCHECK_URL" = "${aws_instance.ethereum.public_dns}"
+      "HEALTHCHECK_URL" = "${element(aws_instance.ethereum.*.public_dns, count.index)}"
     }
   }
 
@@ -34,7 +37,7 @@ resource "aws_lambda_function" "check_parity_sync" {
 }
 
 resource "aws_iam_policy" "lambda_logging" {
-  name        = "lambda_logging"
+  name        = "lambda_logging-${var.application}"
   path        = "/"
   description = "IAM policy for logging from a lambda"
 
@@ -56,7 +59,7 @@ EOF
 }
 
 resource "aws_iam_role" "iam_for_lambda" {
-  name = "iam_for_lambda"
+  name = "iam_for_lambda-${var.application}"
 
   assume_role_policy = <<EOF
 {

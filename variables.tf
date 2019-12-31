@@ -13,12 +13,12 @@ variable "vpc_cidr_block" {
 
 variable "slack_webhook_url" {}
 
-variable "count" {
+variable "eth_count" {
   description = "The amount of Parity instances to create"
   default     = 1
 }
 
-variable "vpc_id" {}
+//variable "vpc_id" {}
 
 variable "instance_type" {
   default = "m5.2xlarge"

@@ -76,17 +76,21 @@ TFEOF
 
 resource "aws_instance" "ethereum" {
   ami               = "${data.aws_ami.ubuntu-18_04.id}"
-  count             = "${var.count}"
+  count             = "${var.eth_count}"
   availability_zone = "${aws_ebs_volume.ethereum_block_storage.*.availability_zone[0]}"
   instance_type     = "${var.instance_type}"
-  volume_size       = 50
+
+  root_block_device {
+    volume_type = "gp2"
+    volume_size = 50
+  }
 
   # This machine type is chosen since we need at least 16GB of RAM for mainnet
   # and sufficent amount of networking capabilities
   security_groups = ["${aws_security_group.ethereum.id}"]
 
   key_name  = "${aws_key_pair.deployer.key_name}"
-  subnet_id = "${module.vpc.subnet-ids-public[0]}"
+  subnet_id = "${module.vpc.first-subnet-id}"
 
   user_data = "${local.ethereum_user_data}"
 
@@ -118,6 +122,7 @@ resource "aws_instance" "ethereum" {
   }
 
   connection {
+    host        = "${self.public_ip}"
     type        = "ssh"
     user        = "ubuntu"
     private_key = "${file(var.ssh_private_keypath)}"

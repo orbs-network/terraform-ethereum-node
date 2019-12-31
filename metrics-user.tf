@@ -1,9 +1,9 @@
 resource "aws_iam_user" "cloudwatch" {
-  name = "cloudwatch-reporter"
+  name = "cloudwatch-reporter-${var.application}"
   path = "/system/"
 
   tags = {
-    tag-key = "cloudwatch-reporter"
+    tag-key = "cloudwatch-reporter-${var.application}"
   }
 }
 

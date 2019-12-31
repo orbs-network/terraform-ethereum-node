@@ -54,7 +54,7 @@ resource "aws_security_group" "ethereum" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Name = "${var.application}-sg"
   }
 }
