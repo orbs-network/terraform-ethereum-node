@@ -1,14 +1,9 @@
 const http = require('http');
 const execSync = require('child_process').execSync;
+const { getLatestBlockHeaders, getMachineCurrentTime } = require('./ethereum-lib');
 
 function getEthSyncing() {
     const result = execSync(`curl -s --data '{"method":"eth_syncing","params":[],"id":1,"jsonrpc":"2.0"}' -H "Content-Type: application/json" -X POST http://localhost:8545`);
-    const resultAsString = result.toString();
-    return JSON.parse(resultAsString);
-}
-
-function getLatestBlockHeaders() {
-    const result = execSync(`curl -s --data '{"method":"eth_getBlockByNumber","params":["latest", false],"id":1,"jsonrpc":"2.0"}' -H "Content-Type: application/json" -X POST http://localhost:8545`);
     const resultAsString = result.toString();
     return JSON.parse(resultAsString);
 }
@@ -25,8 +20,8 @@ var server = http.createServer((function (_, response) {
     const parityChainStatus = getParityChainStatus();
 
     const latestBlock = getLatestBlockHeaders();
-    const latestBlockTimestamp = parseInt(latestBlock.result.timestamp)
-    const currentMachineTimestamp = Math.floor(Date.now() / 1000);
+    const latestBlockTimestamp = parseInt(latestBlock.result.timestamp);
+    const currentMachineTimestamp = getMachineCurrentTime();
 
     const returnValue = {
         ok: (Math.abs(currentMachineTimestamp - latestBlockTimestamp)) < 5 * 60, // the health check should fail if 5 minutes

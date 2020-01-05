@@ -1,6 +1,6 @@
 {
     "name": "terraform-ethereum-node",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Terraform Ethereum Node setup - the package.json here is merely as a build tool",
     "main": "index.js",
     "scripts": {
@@ -9,6 +9,7 @@
     "author": "Itamar Arjuan",
     "license": "MIT",
     "dependencies": {
+        "node-fetch": "^2.6.0",
         "request": "^2.88.0",
         "request-promise-native": "^1.0.7"
     },

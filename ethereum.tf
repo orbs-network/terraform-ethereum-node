@@ -24,10 +24,11 @@ mkfs -t xfs /dev/$BLOCK_STORAGE_NAME
 echo "/dev/$BLOCK_STORAGE_NAME /home/root/.local xfs defaults,nofail 0 0" >> /etc/fstab
 mount -a
 
-cd /home/ubuntu && curl -O https://releases.parity.io/ethereum/v2.6.6/x86_64-unknown-linux-gnu/parity
+cd /home/ubuntu && curl -O https://releases.parity.io/ethereum/v2.5.13/x86_64-unknown-linux-gnu/parity
 chmod u+x parity
 
 (crontab -l 2>/dev/null; echo "0 */1 * * *  /usr/bin/node /home/ubuntu/check-ethereum.js ${var.slack_webhook_url} >> /var/log/manager.log") | crontab -
+(crontab -l 2>/dev/null; echo "0 0 * * *  /usr/bin/node /home/ubuntu/get-latest-parity.js ${var.slack_webhook_url} >> /var/log/manager.log") | crontab -
 
 echo "[program:healthcheck]
 command=/usr/bin/node /home/ubuntu/health.js
@@ -96,14 +97,33 @@ resource "aws_instance" "ethereum" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo hostnamectl set-hostname ethereum-parity-${var.region}-${count.index + 1}",
-      "echo 'testing' >> /home/ubuntu/testing.out",
+      "sudo hostnamectl set-hostname ethereum-parity-${var.region}-${count.index + 1}"
     ]
   }
 
   provisioner "file" {
     source      = "restart-parity.sh"
     destination = "/home/ubuntu/restart-parity.sh"
+  }
+
+  provisioner "file" {
+    source      = "package.json"
+    destination = "/home/ubuntu/package.json"
+  }
+
+  provisioner "file" {
+    source      = "get-latest-parity.js"
+    destination = "/home/ubuntu/get-latest-parity.js"
+  }
+
+  provisioner "file" {
+    source      = "recover-from-failed-upgrade.sh"
+    destination = "/home/ubuntu/recover-from-failed-upgrade.sh"
+  }
+
+  provisioner "file" {
+    source      = "upgrade-parity.sh"
+    destination = "/home/ubuntu/upgrade-parity.sh"
   }
 
   provisioner "file" {

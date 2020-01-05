@@ -11,6 +11,20 @@ function notifyManagerInitiatedRestartToSlack(managerMessage) {
     }
 }
 
+function getLatestBlockHeaders() {
+    const result = execSync(`curl -s --data '{"method":"eth_getBlockByNumber","params":["latest", false],"id":1,"jsonrpc":"2.0"}' -H "Content-Type: application/json" -X POST http://localhost:8545`);
+    const resultAsString = result.toString();
+    return JSON.parse(resultAsString);
+}
+
+function getLatestBlockTimestamp() {
+    return parseInt(getLatestBlockHeaders().result.timestamp);
+}
+
+function getMachineCurrentTime() {
+    return Math.floor(Date.now() / 1000);
+}
+
 /**
  * Check iteratively if we are stuck syncing a specific block number
  */
@@ -55,6 +69,18 @@ function timeLog(message) {
 
 function restartEthereum() {
     return execSync('./restart-parity.sh', {
+        cwd: '/home/ubuntu'
+    });
+}
+
+function upgradeEthereum(installUrl) {
+    return execSync(`./upgrade-parity.sh ${installUrl}`, {
+        cwd: '/home/ubuntu'
+    });
+}
+
+function rollbackEthereum() {
+    return execSync(`./recover-from-failed-upgrade.sh`, {
         cwd: '/home/ubuntu'
     });
 }
@@ -128,10 +154,56 @@ function stuckWhileSyncingPeriodicSnapshot(logs) {
     };
 }
 
+function getLatestFromHaystack(releases, type = 'stable') {
+    for (let n in releases) {
+        if (releases[n].name.indexOf(type) !== -1) {
+            return releases[n];
+        }
+    }
+    return false;
+}
+
+function getLinuxUrlFromReleaseHtml(body = '') {
+    return body
+        .match(/\[parity\]\(.*\)/g)
+        .filter(ml => ml.indexOf('linux') !== -1)[0]
+        .replace('[parity]', '')
+        .replace(/\(|\)/g, '');
+}
+
+const regExExtractParitySemver = /v(([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9a-zA-Z]+))?)/;
+
+function getInstalledParityVersion(commandAsString = 'parity --version') {
+    return execSync(commandAsString, {
+        cwd: '/home/ubuntu'
+    })
+        .toString()
+        .match(regExExtractParitySemver)[0];
+}
+
+function getLatestReleasesOfParity(releases) {
+    const v = {};
+    const latestStable = getLatestFromHaystack(releases);
+    v.stable = getLinuxUrlFromReleaseHtml(latestStable.body);
+
+    const latestBeta = getLatestFromHaystack(releases, 'beta');
+    v.beta = getLinuxUrlFromReleaseHtml(latestBeta.body);
+
+    return v;
+}
+
 module.exports = {
+    regExExtractParitySemver,
     stuckWhileSyncingCertainBlock,
     stuckWhileSyncingPeriodicSnapshot,
+    getInstalledParityVersion,
+    getLatestBlockTimestamp,
+    getMachineCurrentTime,
     timeLog,
+    upgradeEthereum,
+    rollbackEthereum,
+    getLatestReleasesOfParity,
+    getLatestBlockHeaders,
     notifyManagerInitiatedRestartToSlack,
     stuckWhileSyncingSnapshot,
     restartEthereum,
