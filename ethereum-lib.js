@@ -6,7 +6,7 @@ const slackUrl = process.argv[2];
 
 function notifyManagerInitiatedRestartToSlack(managerMessage) {
     if (slackUrl !== undefined) {
-        const baseCommand = 'curl -s -X POST --data-urlencode "payload={\\"channel\\": \\"#prod-monitoring\\", \\"username\\": \\"eth-manager\\", \\"text\\": \\"Restarting Ethereum node *' + os.hostname() + '* with reason: \\`' + managerMessage + '\\`\\"}" ' + slackUrl;
+        const baseCommand = 'curl -s -X POST --data-urlencode "payload={\\"channel\\": \\"#prod-monitoring\\", \\"username\\": \\"eth-manager\\", \\"text\\": \\"[*' + os.hostname() + '*] ' + managerMessage + '\\"}" ' + slackUrl;
         execSync(baseCommand);
     }
 }
@@ -182,14 +182,8 @@ function getInstalledParityVersion(commandAsString = 'parity --version') {
 }
 
 function getLatestReleasesOfParity(releases) {
-    const v = {};
     const latestStable = getLatestFromHaystack(releases);
-    v.stable = getLinuxUrlFromReleaseHtml(latestStable.body);
-
-    const latestBeta = getLatestFromHaystack(releases, 'beta');
-    v.beta = getLinuxUrlFromReleaseHtml(latestBeta.body);
-
-    return v;
+    return getLinuxUrlFromReleaseHtml(latestStable.body);
 }
 
 module.exports = {
