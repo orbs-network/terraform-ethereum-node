@@ -24,6 +24,9 @@ variable "instance_type" {
   default = "m5.2xlarge"
 }
 
+variable "vpc_id" {  
+}
+
 variable "ssh_keypath" {
   default = "~/.ssh/id_rsa.pub"
 }

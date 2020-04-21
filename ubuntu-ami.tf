@@ -1,6 +1,6 @@
 data "aws_ami" "ubuntu-18_04" {
   most_recent = true
-  owners = ["${var.ubuntu_account_number}"]
+  owners = [var.ubuntu_account_number]
 
   filter {
     name   = "name"

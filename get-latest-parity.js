@@ -5,6 +5,7 @@ const {
     getLatestReleasesOfParity,
     getInstalledParityVersion,
     regExExtractParitySemver,
+    sanitizeVersion,
     timeLog,
 } = require('./ethereum-lib');
 
@@ -16,7 +17,7 @@ const {
     const blacklist = await blackListResp.json();
 
     const versionUrl = getLatestReleasesOfParity(releases);
-    const version = `${versionUrl.match(regExExtractParitySemver)[0]}`;
+    const version = `${sanitizeVersion(versionUrl.match(regExExtractParitySemver)[0])}`;
     const installedVersion = getInstalledParityVersion('./parity --version');
 
     if (installedVersion !== version && !blacklist.versions.includes(version)) {

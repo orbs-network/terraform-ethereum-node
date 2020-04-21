@@ -9,11 +9,11 @@ if [ -f ./parity ]; then
     mv parity parity-backup
 fi
 
-curl -sO "${PARITY_BINARY_URL}"
+curl -sO PARITY_BINARY_URL
 chmod u+x parity
 
 RESPONSE=$(supervisorctl start ethereum && supervisorctl start healthcheck)
 
-echo "${RESPONSE}"
+echo RESPONSE
 
 exit 0

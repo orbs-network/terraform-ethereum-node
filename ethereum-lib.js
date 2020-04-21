@@ -6,7 +6,7 @@ const slackUrl = process.argv[2];
 
 function notifyManagerInitiatedRestartToSlack(managerMessage) {
     if (slackUrl !== undefined) {
-        const baseCommand = 'curl -s -X POST --data-urlencode "payload={\\"channel\\": \\"#prod-monitoring\\", \\"username\\": \\"eth-manager\\", \\"text\\": \\"[*' + os.hostname() + '*] ' + managerMessage + '\\"}" ' + slackUrl;
+        const baseCommand = 'curl -s -X POST --data-urlencode "payload={\\"channel\\": \\"#prod-monitoring\\", \\"username\\": \\"eth-manager\\", \\"text\\": \\"[*' + os.hostname() + '*] ' + managerMessage + '\\" ' + slackUrl;
         execSync(baseCommand);
     }
 }
@@ -173,12 +173,18 @@ function getLinuxUrlFromReleaseHtml(body = '') {
 
 const regExExtractParitySemver = /v(([0-9]+)\.([0-9]+)\.([0-9]+)(?:-([0-9a-zA-Z]+))?)/;
 
+function sanitizeVersion(version) {
+    return version
+        .replace('-beta', '')
+        .replace('-stable', '');
+}
+
 function getInstalledParityVersion(commandAsString = 'parity --version') {
-    return execSync(commandAsString, {
+    return sanitizeVersion(execSync(commandAsString, {
         cwd: '/home/ubuntu'
     })
         .toString()
-        .match(regExExtractParitySemver)[0];
+        .match(regExExtractParitySemver)[0]);
 }
 
 function getLatestReleasesOfParity(releases) {
@@ -193,6 +199,7 @@ module.exports = {
     getInstalledParityVersion,
     getLatestBlockTimestamp,
     getMachineCurrentTime,
+    sanitizeVersion,
     timeLog,
     upgradeEthereum,
     rollbackEthereum,
