@@ -24,7 +24,8 @@ mkfs -t xfs /dev/$BLOCK_STORAGE_NAME
 echo "/dev/$BLOCK_STORAGE_NAME /home/root/.local xfs defaults,nofail 0 0" >> /etc/fstab
 mount -a
 
-cd /home/ubuntu && curl -O https://releases.parity.io/ethereum/v2.5.13/x86_64-unknown-linux-gnu/parity
+cd /home/ubuntu && curl -O https://releases.parity.io/ethereum/v2.7.2/x86_64-unknown-linux-gnu/parity
+
 chmod u+x parity
 
 (crontab -l 2>/dev/null; echo "0 */1 * * *  /usr/bin/node /home/ubuntu/check-ethereum.js ${var.slack_webhook_url} >> /var/log/manager.log") | crontab -
@@ -36,7 +37,7 @@ autostart=true
 autorestart=true" >> /etc/supervisor/conf.d/health.conf
 
 echo "[program:ethereum]
-command=/home/ubuntu/parity --chain mainnet --db-path=/home/root/.local --min-peers=45 --max-peers=60 --no-secretstore --jsonrpc-interface all --no-ipc --no-ws
+command=/home/ubuntu/parity --chain mainnet --db-path=/home/root/.local --min-peers=45 --max-peers=60 --no-secretstore --jsonrpc-interface all --no-ipc --no-ws --pruning-history 5000
 autostart=true
 autorestart=true
 stderr_logfile=/var/log/ethereum.err.log
@@ -75,11 +76,13 @@ amazon-cloudwatch-agent-ctl -a start
 TFEOF
 }
 
-resource "aws_instance" "ethereum" {
-  ami               = "${data.aws_ami.ubuntu-18_04.id}"
-  count             = "${var.eth_count}"
-  availability_zone = "${aws_ebs_volume.ethereum_block_storage.*.availability_zone[0]}"
-  instance_type     = "${var.instance_type}"
+resource "aws_instance" "ethereum" {  
+  ami               = data.aws_ami.ubuntu-18_04.id
+  availability_zone = aws_ebs_volume.ethereum_block_storage.*.availability_zone[0]
+  instance_type     = var.instance_type
+  count = 1
+
+  subnet_id = element(data.aws_subnet_ids.all.ids[*], 0)
 
   root_block_device {
     volume_type = "gp2"
@@ -88,12 +91,12 @@ resource "aws_instance" "ethereum" {
 
   # This machine type is chosen since we need at least 16GB of RAM for mainnet
   # and sufficent amount of networking capabilities
-  security_groups = ["${aws_security_group.ethereum.id}"]
+  security_groups = [aws_security_group.ethereum.id]
 
-  key_name  = "${aws_key_pair.deployer.key_name}"
-  subnet_id = "${module.vpc.first-subnet-id}"
+  key_name  = aws_key_pair.deployer.key_name
+  
 
-  user_data = "${local.ethereum_user_data}"
+  user_data = local.ethereum_user_data
 
   provisioner "remote-exec" {
     inline = [
@@ -142,10 +145,10 @@ resource "aws_instance" "ethereum" {
   }
 
   connection {
-    host        = "${self.public_ip}"
+    host        = self.public_ip
     type        = "ssh"
     user        = "ubuntu"
-    private_key = "${file(var.ssh_private_keypath)}"
+    private_key = file(var.ssh_private_keypath)
   }
 
   tags = {

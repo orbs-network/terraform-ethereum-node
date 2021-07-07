@@ -8,12 +8,12 @@ resource "aws_iam_user" "cloudwatch" {
 }
 
 resource "aws_iam_access_key" "cloudwatch" {
-  user = "${aws_iam_user.cloudwatch.name}"
+  user = aws_iam_user.cloudwatch.name
 }
 
 resource "aws_iam_user_policy" "cloudwatch_role" {
   name = "cloudwatch-reporter-policy"
-  user = "${aws_iam_user.cloudwatch.name}"
+  user = aws_iam_user.cloudwatch.name
 
   policy = <<EOF
 {

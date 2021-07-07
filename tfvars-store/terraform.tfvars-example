@@ -2,7 +2,7 @@ region = "us-east-1"
 
 count = 1
 
-instance_type = "m5d.2xlarge"
+instance_type = "m5d.xlarge"
 
 ssh_keypath = "~/.ssh/id_rsa.pub"
 

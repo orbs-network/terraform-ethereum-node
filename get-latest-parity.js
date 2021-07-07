@@ -5,71 +5,24 @@ const {
     getLatestReleasesOfParity,
     getInstalledParityVersion,
     regExExtractParitySemver,
-    rollbackEthereum,
+    sanitizeVersion,
     timeLog,
-    upgradeEthereum
 } = require('./ethereum-lib');
 
-let type = process.argv[3];
-if (type !== 'beta') {
-    type = 'stable';
-}
+(async function () {
+    const resp = await fetch('https://api.github.com/repos/paritytech/parity-ethereum/releases');
+    const releases = await resp.json();
 
-let upgradeAttempted = false;
+    const blackListResp = await fetch('https://raw.githubusercontent.com/orbs-network/orbs-ethereum-ops/master/black-list.json');
+    const blacklist = await blackListResp.json();
 
-function handleRollbackForAnyReason(err) {
-    if (upgradeAttempted && err.status !== 0) {
-        const m = `Upgrade failed with exit code ${err.status}, Rolling back..`;
+    const versionUrl = getLatestReleasesOfParity(releases);
+    const version = `${sanitizeVersion(versionUrl.match(regExExtractParitySemver)[0])}`;
+    const installedVersion = getInstalledParityVersion('./parity --version');
+
+    if (installedVersion !== version && !blacklist.versions.includes(version)) {
+        const m = `Ahoi Orbs Sailors, Word is there is a new Parity version *${version}* (installed: ${installedVersion}) Please do something about this.. CC: <@UB0RYKSFP> <@UC41FJ8LX>\nTo black-list this version see: https://github.com/orbs-network/orbs-ethereum-ops/blob/master/readme.md`;
         timeLog(m);
         notifyManagerInitiatedRestartToSlack(m);
-        try {
-            rollbackEthereum();
-        } catch (e) {
-            const mRecover = `Roll back failed!\n (*go into the machine and fix this manually!*)`;
-            timeLog(mRecover);
-            notifyManagerInitiatedRestartToSlack(m);
-        }
-    }
-}
-
-process.on('uncaughtException', (err) => {
-    handleRollbackForAnyReason(err);
-});
-
-process.on('SIGINT', (err) => {
-    handleRollbackForAnyReason(err);
-});
-
-process.on('SIGTERM', (err) => {
-    handleRollbackForAnyReason(err);
-});
-
-(async function () {
-    try {
-        const resp = await fetch('https://api.github.com/repos/paritytech/parity-ethereum/releases');
-        const releases = await resp.json();
-
-        const urls = getLatestReleasesOfParity(releases);
-        const installUrl = urls[type];
-        const version = `${installUrl.match(regExExtractParitySemver)[0]}-${type}`;
-        const installedVersion = getInstalledParityVersion('./parity --version');
-
-        if (installedVersion !== version) {
-            const m = `Upgrading Parity to ${version} which is currently the latest Parity, current: ${installedVersion}`;
-            timeLog(m);
-            notifyManagerInitiatedRestartToSlack(m);
-            upgradeAttempted = true;
-            const upgradeResult = upgradeEthereum(installUrl);
-            timeLog(upgradeResult.toString());
-            if (upgradeResult.toString().indexOf('ERROR') !== -1) {
-                throw new Error(`Couldn't update Parity ${upgradeResult.stdout.replace('\n', ' ')}`);
-            }
-            const mm = `Parity update to version ${version} is successful!`;
-            timeLog(mm);
-            notifyManagerInitiatedRestartToSlack(mm);
-        }
-    } catch (err) {
-        handleRollbackForAnyReason(err);
-        process.exit(1);
     }
 })();
